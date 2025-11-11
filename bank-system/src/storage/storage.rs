@@ -1,6 +1,5 @@
-use crate::Balance;
-use crate::Name;
-use crate::Storage;
+use super::Storage;
+use crate::{Name, balance::Balance};
 use std::collections::HashMap;
 
 impl Storage {
@@ -24,12 +23,12 @@ impl Storage {
     }
 
     pub fn get_balance(&self, name: &Name) -> Option<Balance> {
-        self.accounts.get(name).copied()
+        self.accounts.get(name).cloned()
     }
 
     pub fn deposit(&mut self, name: &Name, amount: Balance) -> Result<(), String> {
         if let Some(balance) = self.accounts.get_mut(name) {
-            *balance += amount;
+            *balance += amount.get_value();
             Ok(())
         } else {
             Err("Пользователь не найден".into())

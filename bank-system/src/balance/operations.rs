@@ -4,44 +4,61 @@ use std::{
     ops::{AddAssign, SubAssign},
 };
 
-#[derive(Debug, Clone, Copy)]
-pub enum OpBalance {
+pub enum BalanceOpError {
+    NotEnoughMoney { required: i64, available: i64 },
+    InvalidOperation(String),
+    ParseError(String),
+    OverLimitInt64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum BalanceOp {
     Deposit(i64),
     Withdraw(i64),
     Close,
 }
 
-impl Display for OpBalance {
+impl Display for BalanceOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let label = match self {
-            OpBalance::Deposit(v) => format!("D{}", v),
-            OpBalance::Withdraw(v) => format!("W{}", v),
-            OpBalance::Close => "C".to_string(),
+            BalanceOp::Deposit(v) => format!("Deposit({})", v),
+            BalanceOp::Withdraw(v) => format!("Withdraw({})", v),
+            BalanceOp::Close => "Close".to_string(),
         };
         write!(f, "{label}")
     }
 }
 
-impl From<String> for OpBalance {
-    fn from(value: String) -> Self {
-        match value.as_str() {
-            "D" => OpBalance::Deposit(0),
-            "W" => OpBalance::Withdraw(0),
-            "C" => OpBalance::Close,
-            _ => OpBalance::Deposit(0),
+impl Into<String> for BalanceOp {
+    fn into(self) -> String {
+        match self {
+            BalanceOp::Deposit(v) => format!("D{}", v),
+            BalanceOp::Withdraw(v) => format!("W{}", v),
+            BalanceOp::Close => "C".to_string(),
         }
     }
 }
 
-impl AddAssign<i64> for Balance {
-    fn add_assign(&mut self, rhs: i64) {
-        self.apply_op(&OpBalance::Deposit(rhs));
-    }
-}
+impl TryFrom<String> for BalanceOp {
+    type Error = BalanceOpError;
 
-impl SubAssign<i64> for Balance {
-    fn sub_assign(&mut self, rhs: i64) {
-        self.apply_op(&OpBalance::Withdraw(rhs));
+    fn try_from(text: String) -> Result<Self, Self::Error> {
+        if text.len() < 2 && text != "C" {
+            return Err(BalanceOpError::ParseError(text));
+        }
+        if text.len() == 1 && text == "C" {
+            return Ok(BalanceOp::Close);
+        }
+
+        let (op, val) = text.split_at(1);
+        if let Ok(v) = val.parse::<i64>() {
+            return match op {
+                "D" => Ok(BalanceOp::Deposit(v)),
+                "W" => Ok(BalanceOp::Withdraw(v)),
+                _ => Err(BalanceOpError::InvalidOperation(text)),
+            };
+        }
+        Err(BalanceOpError::ParseError(text))
     }
 }
 
@@ -54,27 +71,14 @@ impl From<i64> for Balance {
     }
 }
 
-impl Balance {
-    pub fn apply_op(&mut self, op: &OpBalance) -> bool {
-        let ok = match op {
-            OpBalance::Deposit(b) => self.value.checked_add(*b).is_some(),
-            OpBalance::Withdraw(b) => {
-                if self.value < *b {
-                    return false;
-                }
-                self.value -= b;
-                true
-            }
-            OpBalance::Close => {
-                self.value = 0;
-                true
-            }
-            _ => false,
-        };
+impl AddAssign<i64> for Balance {
+    fn add_assign(&mut self, rhs: i64) {
+        self.apply_op(&BalanceOp::Deposit(rhs));
+    }
+}
 
-        if ok {
-            self.history.push(*op);
-        }
-        ok
+impl SubAssign<i64> for Balance {
+    fn sub_assign(&mut self, rhs: i64) {
+        self.apply_op(&BalanceOp::Withdraw(rhs));
     }
 }

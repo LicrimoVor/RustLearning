@@ -1,9 +1,11 @@
 use super::Storage;
-use crate::{Name, balance::Balance};
+use crate::{
+    Name,
+    balance::{Balance, BalanceManager, BalanceManagerError},
+};
 use std::collections::HashMap;
 
 impl Storage {
-    /// Создаёт новый пустой банк
     pub fn new() -> Self {
         Storage {
             accounts: HashMap::new(),
@@ -26,30 +28,35 @@ impl Storage {
         self.accounts.get(name).cloned()
     }
 
-    pub fn deposit(&mut self, name: &Name, amount: Balance) -> Result<(), String> {
+    pub fn get_all(&self) -> Vec<(Name, &Balance)> {
+        self.accounts.iter().map(|(n, b)| (n.clone(), b)).collect()
+    }
+}
+
+impl BalanceManager for Storage {
+    fn deposit(&mut self, name: &Name, amount: i64) -> Result<(), BalanceManagerError> {
         if let Some(balance) = self.accounts.get_mut(name) {
-            *balance += amount.get_value();
+            *balance += amount;
             Ok(())
         } else {
-            Err("Пользователь не найден".into())
+            Err(BalanceManagerError::UserNotFound(name.clone()))
         }
     }
 
-    pub fn withdraw(&mut self, name: &Name, amount: Balance) -> Result<(), String> {
+    fn withdraw(&mut self, name: &Name, amount: i64) -> Result<(), BalanceManagerError> {
         if let Some(balance) = self.accounts.get_mut(name) {
-            if *balance >= amount {
+            if balance.get_value() >= amount {
                 *balance -= amount;
                 Ok(())
             } else {
-                Err("Недостаточно средств".into())
+                Err(BalanceManagerError::NotEnoughMoney {
+                    required: amount,
+                    available: balance.get_value(),
+                })
             }
         } else {
-            Err("Пользователь не найден".into())
+            Err(BalanceManagerError::UserNotFound(name.clone()))
         }
-    }
-
-    pub fn get_all(&self) -> Vec<(Name, Balance)> {
-        self.accounts.iter().map(|(n, b)| (n.clone(), *b)).collect()
     }
 }
 

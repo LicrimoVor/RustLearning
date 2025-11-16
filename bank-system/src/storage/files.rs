@@ -1,4 +1,5 @@
 use super::Storage;
+use crate::balance::BalanceManager;
 use std::{
     fs::{self, File},
     io::{self, BufRead},
@@ -134,8 +135,8 @@ mod tests {
         let mut storage = Storage::new();
         storage.add_user("John".to_string());
         storage.add_user("Alice".to_string());
-        storage.deposit(&"John".to_string(), 150.into()).unwrap();
-        storage.deposit(&"Alice".to_string(), 300.into()).unwrap();
+        storage.deposit(&"John".to_string(), 150).unwrap();
+        storage.deposit(&"Alice".to_string(), 300).unwrap();
 
         storage.save("test.csv");
 

@@ -1,25 +1,13 @@
-pub mod balance;
+pub mod analitics;
+mod balance;
+pub mod manager;
 pub mod operations;
 
-pub use operations::OpBalance;
+pub use manager::{BalanceManager, BalanceManagerError};
+pub use operations::{BalanceOp, BalanceOpError};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Balance {
     value: i64,
-    pub history: Vec<OpBalance>,
-}
-
-impl Balance {
-    pub fn proccess<'a>(&mut self, ops: &[&'a OpBalance]) -> Vec<&'a OpBalance> {
-        let exclusion = ops
-            .into_iter()
-            .filter(|op: &&&'a OpBalance| !self.apply_op(*op))
-            .map(|op| *op)
-            .collect();
-        exclusion
-    }
-
-    pub fn get_value(&self) -> i64 {
-        self.value
-    }
+    history: Vec<BalanceOp>,
 }

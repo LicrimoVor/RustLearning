@@ -7,5 +7,5 @@ pub enum TxError {
 }
 
 pub trait Transaction {
-    fn apply(&self, accounts: &mut Storage) -> Result<(), TxError>;
+    fn apply(&self, storage: &mut Storage) -> Result<(), TxError>;
 }

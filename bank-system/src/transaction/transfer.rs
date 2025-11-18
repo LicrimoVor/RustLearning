@@ -1,6 +1,8 @@
-use super::transaction::{Transaction, TxError};
+use super::{Transaction, TxCombinator, transaction::TxError};
 use crate::{BalanceManager, Storage};
+use std::ops::Add;
 
+#[derive(Debug, Clone)]
 pub struct Transfer {
     from: String,
     to: String,
@@ -31,5 +33,13 @@ impl Transaction for Transfer {
             .map_err(|_| TxError::InvalidAccount)?;
 
         Ok(())
+    }
+}
+
+impl<Rhs: Transaction> Add<Rhs> for Transfer {
+    type Output = TxCombinator<Transfer, Rhs>;
+
+    fn add(self, rhs: Rhs) -> Self::Output {
+        TxCombinator::new(self, rhs)
     }
 }

@@ -1,6 +1,6 @@
 use bank_system::{
     BalanceManager, Name, Storage,
-    transaction::{Deposit, Transaction, Transfer},
+    transaction::{Deposit, Transaction, Transfer, Withdraw},
 };
 use std::io::{self, BufRead, Write};
 
@@ -107,12 +107,13 @@ fn main() {
                         continue;
                     }
                 };
-                match storage.withdraw(&name, amount.into()) {
+                let tx = Withdraw::new(name.clone(), amount);
+                match tx.apply(&mut storage) {
                     Ok(_) => {
                         println!("С баланса пользователя {} снято {}", name, amount);
                         storage.save("balance.csv");
                     }
-                    Err(e) => println!("Ошибка: {}", e),
+                    Err(_) => println!("Ошибка списания"),
                 }
             }
             "balance" => {

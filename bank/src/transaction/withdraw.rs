@@ -1,7 +1,5 @@
-use std::ops::Add;
-
-use super::transaction::{Transaction, TxError};
-use crate::{BalanceManager, BalanceManagerError, Storage, transaction::TxCombinator};
+use super::{Transaction, TxError};
+use crate::{BalanceManager, BalanceManagerError, Storage};
 
 #[derive(Debug, Clone)]
 pub struct Withdraw {
@@ -24,13 +22,5 @@ impl Transaction for Withdraw {
                 BalanceManagerError::UserNotFound(_) => TxError::InvalidAccount,
             })?;
         Ok(())
-    }
-}
-
-impl<Rhs: Transaction> Add<Rhs> for Withdraw {
-    type Output = TxCombinator<Withdraw, Rhs>;
-
-    fn add(self, rhs: Rhs) -> Self::Output {
-        TxCombinator::new(self, rhs)
     }
 }

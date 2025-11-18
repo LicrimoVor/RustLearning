@@ -1,7 +1,5 @@
-use std::ops::Add;
-
-use super::transaction::{Transaction, TxError};
-use crate::{BalanceManager, Storage, transaction::TxCombinator};
+use super::{Transaction, TxError};
+use crate::{BalanceManager, Storage};
 
 #[derive(Debug, Clone)]
 pub struct Deposit {
@@ -21,13 +19,5 @@ impl Transaction for Deposit {
             .deposit(&self.account, self.amount)
             .map_err(|_| TxError::InvalidAccount)?;
         Ok(())
-    }
-}
-
-impl<Rhs: Transaction> Add<Rhs> for Deposit {
-    type Output = TxCombinator<Deposit, Rhs>;
-
-    fn add(self, rhs: Rhs) -> Self::Output {
-        TxCombinator::new(self, rhs)
     }
 }

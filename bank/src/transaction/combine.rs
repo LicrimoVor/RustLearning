@@ -1,4 +1,4 @@
-use super::{Transaction, transaction::TxError};
+use super::{Transaction, TxError};
 use crate::Storage;
 use std::ops::Add;
 

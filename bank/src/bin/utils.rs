@@ -1,4 +1,4 @@
-use bank_system::{
+use bank::{
     BalanceManager, Name, Storage,
     transaction::{Deposit, Transaction, Transfer, Withdraw},
 };

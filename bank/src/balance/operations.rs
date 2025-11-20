@@ -11,10 +11,11 @@ pub enum BalanceOpError {
     OverLimitInt64,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum BalanceOp {
     Deposit(i64),
     Withdraw(i64),
+    Transfer(String, i64),
     Close,
 }
 
@@ -23,6 +24,7 @@ impl Display for BalanceOp {
         let label = match self {
             BalanceOp::Deposit(v) => format!("Deposit({})", v),
             BalanceOp::Withdraw(v) => format!("Withdraw({})", v),
+            BalanceOp::Transfer(n, v) => format!("Transfer({}, {})", n, v),
             BalanceOp::Close => "Close".to_string(),
         };
         write!(f, "{label}")
@@ -34,6 +36,7 @@ impl Debug for BalanceOp {
         let label = match self {
             BalanceOp::Deposit(v) => format!("D{}", v),
             BalanceOp::Withdraw(v) => format!("W{}", v),
+            BalanceOp::Transfer(n, v) => format!("T({},{})", n, v),
             BalanceOp::Close => "C".to_string(),
         };
         write!(f, "{label}")
@@ -45,6 +48,7 @@ impl Into<String> for BalanceOp {
         match self {
             BalanceOp::Deposit(v) => format!("D{}", v),
             BalanceOp::Withdraw(v) => format!("W{}", v),
+            BalanceOp::Transfer(n, v) => format!("T({}:{})", n, v),
             BalanceOp::Close => "C".to_string(),
         }
     }
@@ -62,10 +66,20 @@ impl TryFrom<String> for BalanceOp {
         }
 
         let (op, val) = text.split_at(1);
+        let val_len = val.len();
         if let Ok(v) = val.parse::<i64>() {
             return match op {
                 "D" => Ok(BalanceOp::Deposit(v)),
                 "W" => Ok(BalanceOp::Withdraw(v)),
+                _ => Err(BalanceOpError::InvalidOperation(text)),
+            };
+        } else if let Some((name, v)) = val[1..val_len - 1].split_once(':') {
+            return match op {
+                "T" => Ok(BalanceOp::Transfer(
+                    name.to_string(),
+                    v.parse::<i64>()
+                        .map_err(|_| BalanceOpError::ParseError(v.to_string()))?,
+                )),
                 _ => Err(BalanceOpError::InvalidOperation(text)),
             };
         }
@@ -75,21 +89,18 @@ impl TryFrom<String> for BalanceOp {
 
 impl From<i64> for Balance {
     fn from(value: i64) -> Self {
-        Balance {
-            value,
-            history: vec![],
-        }
+        Balance::new(value, vec![])
     }
 }
 
 impl AddAssign<i64> for Balance {
     fn add_assign(&mut self, rhs: i64) {
-        let _ = self.apply_op(&BalanceOp::Deposit(rhs));
+        let _ = self.apply_op(BalanceOp::Deposit(rhs));
     }
 }
 
 impl SubAssign<i64> for Balance {
     fn sub_assign(&mut self, rhs: i64) {
-        let _ = self.apply_op(&BalanceOp::Withdraw(rhs));
+        let _ = self.apply_op(BalanceOp::Withdraw(rhs));
     }
 }

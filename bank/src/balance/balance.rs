@@ -1,8 +1,11 @@
-use super::{
-    Balance,
-    operations::{BalanceOp, BalanceOpError},
-};
+use super::operations::{BalanceOp, BalanceOpError};
 use std::fmt::Display;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Balance {
+    value: i64,
+    history: Vec<BalanceOp>,
+}
 
 impl Display for Balance {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -16,18 +19,22 @@ impl Display for Balance {
     }
 }
 
+impl Default for Balance {
+    fn default() -> Self {
+        Self::new(0, vec![])
+    }
+}
+
 impl Balance {
-    pub fn new(value: i64) -> Self {
-        Balance {
-            value,
-            history: vec![],
-        }
+    pub fn new(value: i64, history: Vec<BalanceOp>) -> Self {
+        Balance { value, history }
     }
 
-    pub fn apply_op(&mut self, op: &BalanceOp) -> Result<(), BalanceOpError> {
+    /// Применяет операцию к счету
+    pub fn apply_op(&mut self, op: BalanceOp) -> Result<(), BalanceOpError> {
         let result = match op {
             BalanceOp::Deposit(b) => {
-                if let Some(sum) = self.value.checked_add(*b) {
+                if let Some(sum) = self.value.checked_add(b) {
                     self.value = sum;
                     Ok(())
                 } else {
@@ -35,13 +42,24 @@ impl Balance {
                 }
             }
             BalanceOp::Withdraw(b) => {
-                if self.value < *b {
+                if self.value < b {
                     Err(BalanceOpError::NotEnoughMoney {
-                        required: *b,
+                        required: b,
                         available: self.value,
                     })
                 } else {
                     self.value -= b;
+                    Ok(())
+                }
+            }
+            BalanceOp::Transfer(_, b) => {
+                if self.value < b {
+                    Err(BalanceOpError::NotEnoughMoney {
+                        required: b,
+                        available: self.value,
+                    })
+                } else {
+                    self.value = b;
                     Ok(())
                 }
             }
@@ -52,16 +70,16 @@ impl Balance {
         };
 
         if result.is_ok() {
-            self.history.push(*op);
+            self.history.push(op);
         }
         result
     }
 
-    pub fn proccess<'a>(&mut self, ops: &[&'a BalanceOp]) -> Vec<&'a BalanceOp> {
+    /// Применяет список операций
+    pub fn apply_ops(&mut self, ops: Vec<BalanceOp>) -> Vec<Result<(), BalanceOpError>> {
         let exclusion = ops
             .into_iter()
-            .filter(|op: &&&'a BalanceOp| self.apply_op(*op).is_ok())
-            .map(|op| *op)
+            .map(|op| self.apply_op(op.clone()))
             .collect();
         exclusion
     }

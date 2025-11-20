@@ -11,12 +11,17 @@ pub mod macros;
 
 use crate::{Storage, impl_add_trait};
 
-#[derive(Debug)]
+/// # Ошибки
+/// - [TxError::InsufficientFunds] - Недостаточно средств
+/// - [TxError::InvalidAccount] - Не найден счет
+#[derive(Debug, PartialEq)]
 pub enum TxError {
     InsufficientFunds,
     InvalidAccount,
 }
 
+/// Транзакция - операция с балансом, которые хранятся в БД:
+/// - ```fn apply(&self, storage: &mut Storage)``` - применить транзакцию
 pub trait Transaction {
     fn apply(&self, storage: &mut Storage) -> Result<(), TxError>;
 }

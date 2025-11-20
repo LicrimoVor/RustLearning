@@ -1,5 +1,5 @@
 use super::{Transaction, TxError};
-use crate::{BalanceManager, BalanceManagerError, Storage};
+use crate::{BalanceManager, BalanceManagerError, BalanceOp, Storage};
 
 #[derive(Debug, Clone)]
 pub struct Withdraw {
@@ -7,6 +7,7 @@ pub struct Withdraw {
     amount: i64,
 }
 
+/// Списание с счета
 impl Withdraw {
     pub fn new(account: String, amount: i64) -> Self {
         Self { account, amount }
@@ -22,5 +23,11 @@ impl Transaction for Withdraw {
                 BalanceManagerError::UserNotFound(_) => TxError::InvalidAccount,
             })?;
         Ok(())
+    }
+}
+
+impl Into<BalanceOp> for Withdraw {
+    fn into(self) -> BalanceOp {
+        BalanceOp::Withdraw(self.amount)
     }
 }

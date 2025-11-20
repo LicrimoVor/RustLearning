@@ -1,5 +1,5 @@
 use super::{Transaction, TxError};
-use crate::{BalanceManager, Storage};
+use crate::{BalanceManager, BalanceOp, Storage};
 
 #[derive(Debug, Clone)]
 pub struct Transfer {
@@ -8,6 +8,7 @@ pub struct Transfer {
     amount: i64,
 }
 
+/// Перевод средств между счетами
 impl Transfer {
     pub fn new(from: String, to: String, amount: i64) -> Self {
         Self { from, to, amount }
@@ -32,5 +33,11 @@ impl Transaction for Transfer {
             .map_err(|_| TxError::InvalidAccount)?;
 
         Ok(())
+    }
+}
+
+impl Into<BalanceOp> for Transfer {
+    fn into(self) -> BalanceOp {
+        BalanceOp::Withdraw(self.amount)
     }
 }

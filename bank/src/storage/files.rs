@@ -89,9 +89,9 @@ mod tests {
         assert!(storage.is_ok());
 
         let storage = storage.unwrap();
-        let mut j_balance = Balance::new(0);
+        let mut j_balance = Balance::default();
         j_balance += 100;
-        let mut a_balance = Balance::new(0);
+        let mut a_balance = Balance::default();
         a_balance += 300;
         a_balance -= 100;
 

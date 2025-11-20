@@ -24,6 +24,7 @@ macro_rules! impl_add {
     };
 }
 
+/// Макрос для автоматического написания оператора `+` для транзакций
 #[macro_export(local_inner_macros)]
 macro_rules! impl_add_trait {
     ( $( $lhs:ty ),* ) => {

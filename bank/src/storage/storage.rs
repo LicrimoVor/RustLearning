@@ -58,6 +58,35 @@ impl BalanceManager for Storage {
             Err(BalanceManagerError::UserNotFound(name.clone()))
         }
     }
+
+    fn transfer(&mut self, from: &Name, to: &Name, amount: i64) -> Result<(), BalanceManagerError> {
+        if let [Some(from_balance), Some(to_balance)] = self.accounts.get_disjoint_mut([from, to]) {
+            if from_balance.get_value() >= amount {
+                *from_balance -= amount;
+                *to_balance += amount;
+                Ok(())
+            } else {
+                Err(BalanceManagerError::NotEnoughMoney {
+                    required: amount,
+                    available: from_balance.get_value(),
+                })
+            }
+        } else {
+            if self.accounts.contains_key(from) {
+                Err(BalanceManagerError::UserNotFound(to.clone()))
+            } else {
+                Err(BalanceManagerError::UserNotFound(from.clone()))
+            }
+        }
+    }
+    fn close(&mut self, name: &Name) -> Result<(), BalanceManagerError> {
+        if self.accounts.contains_key(name) {
+            self.accounts.remove(name);
+            Ok(())
+        } else {
+            Err(BalanceManagerError::UserNotFound(name.clone()))
+        }
+    }
 }
 
 #[cfg(test)]
@@ -77,7 +106,7 @@ mod tests {
         storage.add_user("Bob".to_string());
         storage.deposit(&"Bob".to_string(), 100.into()).unwrap();
 
-        let mut balance = Balance::new(0);
+        let mut balance = Balance::default();
         balance += 100;
 
         assert_eq!(storage.remove_user(&"Bob".to_string()), Some(balance)); // удаляем и получаем баланс
@@ -88,13 +117,8 @@ mod tests {
     fn test_nonexistent_user() {
         let mut storage = Storage::new();
 
-        // Депозит несуществующему пользователю
         assert!(storage.deposit(&"Dana".to_string(), 100.into()).is_err());
-
-        // Снятие у несуществующего пользователя
         assert!(storage.withdraw(&"Dana".to_string(), 50.into()).is_err());
-
-        // Баланс у несуществующего пользователя
         assert_eq!(storage.get_balance(&"Dana".to_string()), None);
     }
 }

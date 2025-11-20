@@ -4,8 +4,8 @@ use quote::quote;
 use syn::{Data, Fields};
 use syn::{DeriveInput, parse_macro_input};
 
+/// Реализация макроса `#[derive(ToSql)]`
 pub fn to_sql_derive(input: TokenStream) -> TokenStream {
-    // Парсим вход в proc_macro2 TokenStream
     let input: DeriveInput = parse_macro_input!(input);
     let name = input.ident;
 

@@ -1,6 +1,7 @@
 use super::{Transaction, TxError};
-use crate::{BalanceManager, Storage};
+use crate::{BalanceManager, BalanceOp, Storage};
 
+/// Пополнение счета
 #[derive(Debug, Clone)]
 pub struct Deposit {
     account: String,
@@ -19,5 +20,11 @@ impl Transaction for Deposit {
             .deposit(&self.account, self.amount)
             .map_err(|_| TxError::InvalidAccount)?;
         Ok(())
+    }
+}
+
+impl Into<BalanceOp> for Deposit {
+    fn into(self) -> BalanceOp {
+        BalanceOp::Deposit(self.amount)
     }
 }

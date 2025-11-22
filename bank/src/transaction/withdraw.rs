@@ -1,5 +1,9 @@
 use super::{Transaction, TxError};
-use crate::{BalanceManager, BalanceManagerError, BalanceOp, Storage};
+use crate::balance::{
+    manager::{BalanceManager, BalanceManagerError},
+    operations::BalanceOp,
+};
+use crate::storage::Storage;
 
 #[derive(Debug, Clone)]
 pub struct Withdraw {

@@ -1,5 +1,6 @@
 use super::{Transaction, TxError};
-use crate::{BalanceManager, BalanceOp, Storage};
+use crate::balance::{manager::BalanceManager, operations::BalanceOp};
+use crate::storage::Storage;
 
 #[derive(Debug, Clone)]
 pub struct Transfer {

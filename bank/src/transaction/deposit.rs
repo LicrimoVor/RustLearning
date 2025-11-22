@@ -1,5 +1,6 @@
 use super::{Transaction, TxError};
-use crate::{BalanceManager, BalanceOp, Storage};
+use crate::balance::{manager::BalanceManager, operations::BalanceOp};
+use crate::storage::Storage;
 
 /// Пополнение счета
 #[derive(Debug, Clone)]

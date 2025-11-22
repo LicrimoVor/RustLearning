@@ -1,5 +1,5 @@
 use super::{Transaction, TxError};
-use crate::Storage;
+use crate::storage::Storage;
 use std::ops::Add;
 
 /// Комбинирование двух транзакций
@@ -41,8 +41,7 @@ impl<T1: Transaction, T2: Transaction, Rhs: Transaction> Add<Rhs> for TxCombinat
 mod tests {
     use super::super::{Deposit, Withdraw};
     use super::*;
-    use crate::Balance;
-    use crate::storage::Storage;
+    use crate::balance::Balance;
 
     #[test]
     fn test_tx_combinator_invalid() {

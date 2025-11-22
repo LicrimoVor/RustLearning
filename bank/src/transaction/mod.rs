@@ -9,7 +9,7 @@ pub use transfer::Transfer;
 pub use withdraw::Withdraw;
 pub mod macros;
 
-use crate::{Storage, impl_add_trait};
+use crate::{impl_add_trait, storage::Storage};
 
 /// # Ошибки
 /// - [TxError::InsufficientFunds] - Недостаточно средств

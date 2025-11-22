@@ -1,7 +1,10 @@
 use super::Storage;
 use crate::{
     Name,
-    balance::{BalanceManager, BalanceManagerError, BalanceOp},
+    balance::{
+        manager::{BalanceManager, BalanceManagerError},
+        operations::BalanceOp,
+    },
 };
 
 impl BalanceManager for Storage {

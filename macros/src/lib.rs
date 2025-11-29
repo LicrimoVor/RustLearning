@@ -12,7 +12,7 @@ mod transaction;
 /// use macros::say_hello;
 ///
 /// say_hello!("world!");
-/// >> Hello world!
+/// // Hello world!
 /// ```
 #[proc_macro]
 pub fn say_hello(input: TokenStream) -> TokenStream {

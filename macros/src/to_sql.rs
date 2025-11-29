@@ -35,7 +35,7 @@ pub fn to_sql_derive(input: TokenStream) -> TokenStream {
         }
     };
 
-    println!("{expanded}",);
+    // println!("{expanded}",);
 
     // Преобразуем proc_macro2::TokenStream обратно в proc_macro::TokenStream
     TokenStream::from(expanded)

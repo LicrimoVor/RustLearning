@@ -1,4 +1,4 @@
-use bank::{BalanceManager, Name, Storage};
+use bank::{Name, balance::manager::BalanceManager, storage::Storage};
 use std::env;
 
 fn main() {
@@ -28,7 +28,7 @@ fn main() {
                 return;
             }
             let name: Name = args[2].clone();
-            let amount: i64 = args[3].parse().expect("Сумма должна быть числом");
+            let amount: u64 = args[3].parse().expect("Сумма должна быть числом");
             match storage.deposit(&name, amount.into()) {
                 Ok(_) => println!("Пополнено: {} на {}", name, amount),
                 Err(e) => println!("Ошибка: {}", e),
@@ -40,7 +40,7 @@ fn main() {
                 return;
             }
             let name: Name = args[2].clone();
-            let amount: i64 = args[3].parse().expect("Сумма должна быть числом");
+            let amount: u64 = args[3].parse().expect("Сумма должна быть числом");
             match storage.withdraw(&name, amount.into()) {
                 Ok(_) => println!("Снято: {} на {}", name, amount),
                 Err(e) => println!("Ошибка: {}", e),

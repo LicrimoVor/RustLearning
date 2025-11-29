@@ -1,5 +1,5 @@
 use bank::{
-    Storage,
+    storage::Storage,
     transaction::{Deposit, Transaction, Transfer, Withdraw},
     tx_chain,
 };

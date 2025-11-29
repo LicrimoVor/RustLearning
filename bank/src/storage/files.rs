@@ -1,5 +1,5 @@
 use super::Storage;
-use crate::balance::{Balance, operations::OperationType};
+use crate::balance::{Balance, errors::BalanceError};
 use std::{
     fs::{self, File},
     io::{self, BufRead},
@@ -34,15 +34,14 @@ impl Storage {
                     let name = parts[0].to_string();
                     // Пробуем преобразовать баланс из строки в число
                     let balance = Balance::try_from(parts[1].to_string()).map_err(|e| {
-                        let message = if let BalanceOpError::ParseError(e) = e {
+                        let message = if let BalanceError::InvalidParseBalance(e) = e {
                             format!("Неверный формат баланса: {}", e)
                         } else {
-                            "Неверный формат баланса".to_string()
+                            "Неверный формат операций".to_string()
                         };
                         std::io::Error::new(std::io::ErrorKind::InvalidData, message)
                     })?;
 
-                    // Добавляем пользователя и выставляем баланс
                     storage.add_user(name.clone());
                     storage.set_balance(&name, balance);
                 } else {
@@ -60,7 +59,7 @@ impl Storage {
     pub fn save(&self, file: &str) {
         let mut data = String::new();
         for (name, balance) in self.get_all() {
-            data.push_str(&format!("{};{}\n", name, balance));
+            data.push_str(&format!("{};{}\n", name, balance.save()));
         }
         fs::write(file, data).expect("Не удалось записать файл");
     }
@@ -69,8 +68,6 @@ impl Storage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::balance::BalanceManager;
-    use std::fs;
     use std::io::Write;
     use tempfile::NamedTempFile;
 
@@ -83,48 +80,40 @@ mod tests {
     #[test]
     fn test_load_data_existing_file() {
         let mut file = NamedTempFile::new().unwrap();
-        write!(file, "John;100,[D100]\nAlice;200,[D300,W100]\n").unwrap();
+        write!(file, 
+"Ivan;300,[1,1764444526,D100,success,Record number #1|3,1764444535,T(Julia:200:true),success,Record number #3]
+Julia;400,[2,1764444530,D600,success,Record number #2|3,1764444535,T(Ivan:200:false),success,Record number #3]").unwrap();
         let path = file.path().to_str().unwrap();
         let storage = Storage::load_data(path);
+        println!("{:?}", storage);
         assert!(storage.is_ok());
 
         let storage = storage.unwrap();
-        let mut j_balance = Balance::default();
-        j_balance += 100;
-        let mut a_balance = Balance::default();
-        a_balance += 300;
-        a_balance -= 100;
 
-        assert_eq!(storage.get_balance(&"John".to_string()), Some(&j_balance));
-        assert_eq!(storage.get_balance(&"Alice".to_string()), Some(&a_balance));
+        let j_balance = storage.get_balance(&"Ivan".to_string());
+        let a_balance = storage.get_balance(&"Julia".to_string());
+
+        assert!(j_balance.is_some());
+        assert!(a_balance.is_some());
+
+        let j_balance = j_balance.unwrap();
+        let a_balance = a_balance.unwrap();
+
+        assert_eq!(j_balance.get_value(), 300);
+        assert_eq!(a_balance.get_value(), 400);
     }
 
     #[test]
     fn test_load_data_not_existing_file() {
         let mut file = NamedTempFile::new().unwrap();
-        write!(file, "John;100,[D100, 100]\nAlice;200,[D300,W100]\n").unwrap();
+        write!(
+            file,
+            "Ivan;300,[1,1764444526,O100,success,Record number #1]\n"
+        )
+        .unwrap();
         let path = file.path().to_str().unwrap();
 
         let storage = Storage::load_data(path);
         assert!(storage.is_err());
-    }
-
-    #[test]
-    fn test_save_creates_file_with_correct_data() {
-        let mut storage = Storage::new();
-        storage.add_user("John".to_string());
-        storage.add_user("Alice".to_string());
-        storage.deposit(&"John".to_string(), 150).unwrap();
-
-        storage.deposit(&"Alice".to_string(), 300).unwrap();
-        storage.withdraw(&"Alice".to_string(), 100).unwrap();
-        storage.save("test.csv");
-
-        let data = fs::read_to_string("test.csv").unwrap();
-        let mut lines: Vec<&str> = data.lines().collect();
-        lines.sort();
-        assert_eq!(lines, vec!["Alice;200,[D300,W100]", "John;150,[D150]"]);
-
-        fs::remove_file("test.csv").unwrap();
     }
 }

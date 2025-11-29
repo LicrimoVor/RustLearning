@@ -25,7 +25,7 @@
     ```
 3. Запустите приложение:
     ```bash
-        cargo run -- bank
+        cargo run -p bank --bin utils
     ```
 
 ## Тесты

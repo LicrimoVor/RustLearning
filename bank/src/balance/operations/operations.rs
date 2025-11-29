@@ -1,6 +1,7 @@
 use super::super::Balance;
 use super::{OperationError, OperationStatus, OperationType};
 use crate::Name;
+use crate::balance::BalanceSize;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Операция баланса
@@ -71,8 +72,8 @@ impl Operation {
                 }
             }
             OperationType::Withdraw(b) => {
-                if let Some(res) = balance.value.checked_sub(b.into()) {
-                    balance.value = res;
+                if balance.value >= b.into() {
+                    balance.value -= b as BalanceSize;
                     Ok(())
                 } else {
                     Err(OperationError::NotEnoughMoney {
@@ -114,6 +115,75 @@ impl Operation {
         }
         balance.history.push(self);
         result
+    }
+}
+
+impl Into<String> for Operation {
+    fn into(self) -> String {
+        format!(
+            "{},{},{},{},{}",
+            self.id, self.timestamp, self.tx_type, self.status, self.description
+        )
+    }
+}
+
+impl From<&Operation> for String {
+    fn from(op: &Operation) -> Self {
+        format!(
+            "{},{},{:?},{},{}",
+            op.id, op.timestamp, op.tx_type, op.status, op.description
+        )
+    }
+}
+
+impl TryFrom<String> for Operation {
+    type Error = OperationError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let mut parts = value.split(',');
+        let id = parts
+            .next()
+            .ok_or(OperationError::ParseError("Нет айди операции".to_string()))?
+            .parse::<u64>()
+            .map_err(|_| OperationError::ParseError("Айди операции неверный".to_string()))?;
+        let timestamp = parts
+            .next()
+            .ok_or(OperationError::ParseError(
+                "Нет времени операции".to_string(),
+            ))?
+            .parse::<u64>()
+            .map_err(|_| OperationError::ParseError("Время операции неверный".to_string()))?;
+
+        let part_tx_type = parts
+            .next()
+            .ok_or(OperationError::ParseError(
+                "Тип операции не определен".to_string(),
+            ))?
+            .to_string();
+
+        let tx_type = OperationType::try_from(part_tx_type)?;
+
+        let part_status = parts
+            .next()
+            .ok_or(OperationError::ParseError(
+                "Статус операции не определен".to_string(),
+            ))?
+            .to_string();
+        let status = OperationStatus::try_from(part_status)?;
+        let description = parts
+            .next()
+            .ok_or(OperationError::ParseError(
+                "Нет описания операции".to_string(),
+            ))?
+            .to_string();
+
+        Ok(Operation {
+            id,
+            timestamp,
+            tx_type,
+            status,
+            description,
+        })
     }
 }
 
@@ -191,23 +261,24 @@ mod tests {
         let mut balance = Balance::new(100, vec![]);
         let mut op = Operation::withdraw(1, 150);
         op.set_status(OperationStatus::SUCCESS);
-        let result = Operation::withdraw(1, 150).apply(&mut balance);
+        let result = op.apply(&mut balance);
 
         assert_eq!(result, Err(OperationError::InvalidStatus));
         assert_eq!(balance.value, 100);
-        assert_eq!(balance.history.len(), 1);
-        assert_eq!(
-            balance.history.last().unwrap().status,
-            OperationStatus::FAILURE
-        );
+        assert_eq!(balance.history.len(), 0);
     }
 
     #[test]
     fn test_balance_op_apply_invalid_money() {
         let mut balance = Balance::new(100, vec![]);
         let result = Operation::withdraw(1, 150).apply(&mut balance);
-
-        assert_eq!(result, Err(OperationError::InvalidStatus));
+        assert_eq!(
+            result,
+            Err(OperationError::NotEnoughMoney {
+                required: 150,
+                available: 100,
+            })
+        );
         assert_eq!(balance.value, 100);
         assert_eq!(balance.history.len(), 1);
         assert_eq!(

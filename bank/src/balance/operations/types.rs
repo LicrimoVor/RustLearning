@@ -1,4 +1,3 @@
-use super::super::BalanceSize;
 use super::OperationError;
 use std::fmt::{Debug, Display};
 
@@ -10,23 +9,6 @@ pub enum OperationType {
     Withdraw(OperationAmount),
     Transfer(String, OperationAmount, bool),
     Close,
-}
-
-impl OperationType {
-    fn get_amount(&self) -> BalanceSize {
-        match self {
-            OperationType::Transfer(_, v, f) => {
-                if *f {
-                    (*v).into()
-                } else {
-                    -(<u64 as Into<BalanceSize>>::into(*v))
-                }
-            }
-            OperationType::Withdraw(v) => (*v).into(),
-            OperationType::Deposit(v) => (*v).into(),
-            OperationType::Close => 0,
-        }
-    }
 }
 
 impl Display for OperationType {
@@ -46,7 +28,7 @@ impl Debug for OperationType {
         let label = match self {
             OperationType::Deposit(v) => format!("D{}", v),
             OperationType::Withdraw(v) => format!("W{}", v),
-            OperationType::Transfer(n, v, f) => format!("T({},{},{})", n, v, f),
+            OperationType::Transfer(n, v, f) => format!("T({}:{}:{})", n, v, f),
             OperationType::Close => "C".to_string(),
         };
         write!(f, "{label}")
@@ -83,22 +65,22 @@ impl TryFrom<String> for OperationType {
                 "W" => Ok(OperationType::Withdraw(v)),
                 _ => Err(OperationError::InvalidOperation(text)),
             };
-        } else if let Some((name, val_flag)) = val[1..val_len - 1].split_once(':') {
-            let Some((val, flag)) = val_flag.split_once(':') else {
-                return Err(OperationError::ParseError(text));
-            };
-            let val = val
-                .parse::<u64>()
-                .map_err(|_| OperationError::ParseError(val.to_string()))?;
-            if !(flag == "1" && flag == "0") {
-                return Err(OperationError::ParseError(text));
+        } else {
+            let parts: Vec<&str> = val[1..val_len - 1].splitn(3, ':').collect();
+            if let [name, value, flag] = parts.as_slice() {
+                let value = value
+                    .parse::<u64>()
+                    .map_err(|_| OperationError::ParseError(val.to_string()))?;
+                if !(*flag == "false" || *flag == "true") {
+                    return Err(OperationError::ParseError(text));
+                }
+                let flag = *flag == "true";
+                return match op {
+                    "T" => Ok(OperationType::Transfer(name.to_string(), value, flag)),
+                    _ => Err(OperationError::InvalidOperation(text)),
+                };
             }
-            let flag = flag == "1";
-            return match op {
-                "T" => Ok(OperationType::Transfer(name.to_string(), val, flag)),
-                _ => Err(OperationError::InvalidOperation(text)),
-            };
+            Err(OperationError::ParseError(text))
         }
-        Err(OperationError::ParseError(text))
     }
 }

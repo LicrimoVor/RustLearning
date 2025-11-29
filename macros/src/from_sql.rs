@@ -48,7 +48,7 @@ pub fn from_sql_derive(input: TokenStream) -> TokenStream {
         }
     };
 
-    println!("{}", expanded);
+    // println!("{}", expanded);
 
     TokenStream::from(expanded)
 }

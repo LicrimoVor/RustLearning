@@ -1,5 +1,7 @@
 use bank::{
-    BalanceManager, Name, Storage,
+    Name,
+    balance::manager::BalanceManager,
+    storage::Storage,
     transaction::{Deposit, Transaction, Transfer, Withdraw},
 };
 use std::io::{self, BufRead, Write};
@@ -42,7 +44,7 @@ fn main() {
                     continue;
                 }
                 let name: Name = args[1].to_string();
-                let balance: i64 = match args[2].parse() {
+                let balance: u64 = match args[2].parse() {
                     Ok(b) => b,
                     Err(_) => {
                         println!("Сумма должна быть числом");
@@ -76,7 +78,7 @@ fn main() {
                     continue;
                 }
                 let name = args[1].to_string();
-                let amount: i64 = match args[2].parse() {
+                let amount: u64 = match args[2].parse() {
                     Ok(a) => a,
                     Err(_) => {
                         println!("Сумма должна быть числом");
@@ -100,7 +102,7 @@ fn main() {
                     continue;
                 }
                 let name = args[1].to_string();
-                let amount: i64 = match args[2].parse() {
+                let amount: u64 = match args[2].parse() {
                     Ok(a) => a,
                     Err(_) => {
                         println!("Сумма должна быть числом");
@@ -135,7 +137,7 @@ fn main() {
                 }
                 let from = args[1].to_string();
                 let to = args[2].to_string();
-                let amount: i64 = match args[3].parse() {
+                let amount: u64 = match args[3].parse() {
                     Ok(a) => a,
                     Err(_) => {
                         println!("Сумма должна быть числом");
